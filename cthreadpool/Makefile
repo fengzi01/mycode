@@ -19,7 +19,7 @@ test: test_cq test_ctp
 
 .PHONY: clean
 clean: 
-	rm *.o 
+	rm *.o && rm -r output/
 
 .PHONY: init
 init: 
