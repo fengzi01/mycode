@@ -16,9 +16,9 @@ int main() {
     long i;
     cthread_pool_t pool;
     
-    pool = ctp_create(10);
+    pool = ctp_create(2);
      
-    for (i=0;i<10;i++) {
+    for (i=0;i<5;i++) {
         ctp_add_task(pool,(void*(*)(void*))task_routine,(void*)i);
     }
 
