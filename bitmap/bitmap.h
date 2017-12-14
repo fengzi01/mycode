@@ -3,33 +3,36 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "stdint.h"
+
+// 定义类型
 
 namespace mycode {
     class bitmap {
         private:
-            int *_bitmap;
-            int _size;
+            uint32_t *_bitmap;
+            uint64_t _size;
             /**
              * 创建内存
              */
-            bool malloc(int size);
+            bool _malloc(uint64_t size);
         public:
             bitmap():_bitmap(NULL),_size(0){}
             ~bitmap() {
                 if (NULL != _bitmap) {
-                    free();
+                    destroy();
                 }
             }
 
-            bool create(int max_num);
+            bool create(uint64_t max_num);
             /**
              * 析构内存
              */
-            bool free();
+            bool destroy();
 
-            bool set(int num);
-            bool unset(int num);
-            bool test(int num);
+            bool set(uint64_t num);
+            bool unset(uint64_t num);
+            bool test(uint64_t num);
     };
 }
 #endif /* ifndef _BITMAP_H */

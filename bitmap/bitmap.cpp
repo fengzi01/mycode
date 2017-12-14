@@ -12,30 +12,29 @@
  */
 
 namespace mycode {
-    bool bitmap::create(int max_num) {
-        if (max_num <= 0) {
-            return false;
-        }
+    bool bitmap::create(uint64_t max_num) {
+        _size = (uint64_t)((max_num >> 5) + 1);
 
-        _size = max_num / 32 + 1;
-        return malloc(_size);
+        printf("size:%lu\n",_size);
+        return _malloc(_size);
     }
 
-    bool bitmap::malloc(int size) {
-        if (size <= 0) {
-            return false;
-        }
+    bool bitmap::_malloc(uint64_t size) {
         if (_bitmap != NULL) {
-            free();
+            destroy();
         }
-        _bitmap = (int *)::malloc(sizeof(int)*size);
+        _bitmap = (uint32_t *)::malloc(sizeof(uint32_t)*size);
+        printf("_bitmap:%p\n",_bitmap);
+        if (!_bitmap) {
+            printf("malloc mem fail.\n");
+            ::free(_bitmap);
+        }
         // bzero 
-        memset(_bitmap, 0, size * sizeof(int));
-
+        memset(_bitmap, 0, size * sizeof(uint32_t));
         return true;
     }
 
-    bool bitmap::free() {
+    bool bitmap::destroy() {
         if (NULL != _bitmap) {
             ::free(_bitmap);
             _bitmap = NULL;
@@ -43,9 +42,9 @@ namespace mycode {
         return true;
     }
 
-    bool bitmap::set(int num) {
-        int idx_of_loc = num >> 5;
-        int idx_of_bit = num % 32;
+    bool bitmap::set(uint64_t num) {
+        uint64_t idx_of_loc = num >> 5;  // num/32
+        uint32_t idx_of_bit = num & 0x1F; // num % 32
         
         if (idx_of_loc >= _size) {
             return false; 
@@ -55,9 +54,9 @@ namespace mycode {
         return true;
     }
 
-    bool bitmap::unset(int num) {
-        int idx_of_loc = num >> 5;
-        int idx_of_bit = num % 32;
+    bool bitmap::unset(uint64_t num) {
+        uint64_t idx_of_loc = num >> 5;
+        uint32_t idx_of_bit = num & 0x1F;
         
         if (idx_of_loc >= _size) {
             return false; 
@@ -65,18 +64,17 @@ namespace mycode {
         
         if (test(num)) {
             // 异或
-            _bitmap[idx_of_loc] = _bitmap[idx_of_loc] ^ 1 << idx_of_bit;
+            _bitmap[idx_of_loc] = _bitmap[idx_of_loc] ^ (1 << idx_of_bit);
         }
         return true;
     }
 
-    bool bitmap::test(int num) {
-        int idx_of_loc = num >> 5;
-        int idx_of_bit = num % 32;
-        int i = 1 << idx_of_bit;
+    bool bitmap::test(uint64_t num) {
+        uint64_t idx_of_loc = num >> 5;
+        uint32_t idx_of_bit = num & 0x1F;
+        uint32_t i = 1 << idx_of_bit;
 
-        int flag = _bitmap[idx_of_loc] & i;
-
+        uint32_t flag = _bitmap[idx_of_loc] & i;
         return flag > 0;
     }
 }
