@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 {
     int client_fd;
 
-    //char *port = argv[1];
+    char *port = argv[1];
 
     struct sockaddr_in remote_addr;
     char buff[BUFSIZE];
@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
     memset(&remote_addr,0,sizeof(remote_addr));
     remote_addr.sin_family = AF_INET;
     remote_addr.sin_addr.s_addr = inet_addr(REMOTE_IP);
-    remote_addr.sin_port = htons(REMOTE_PORT);
-    //remote_addr.sin_port = htons(atoi(port));
+    //remote_addr.sin_port = htons(REMOTE_PORT);
+    remote_addr.sin_port = htons(atoi(port));
 
     // socket
     if ((client_fd = socket(AF_INET,SOCK_STREAM,0)) < 0) {
