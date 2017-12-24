@@ -223,8 +223,7 @@ static void timer_cb(EV_P_ struct ev_timer *w, int revents)
   GlobalInfo *g = (GlobalInfo *)w->data;
   CURLMcode rc;
 
-  rc = curl_multi_socket_action(g->multi, CURL_SOCKET_TIMEOUT, 0,
-                                &g->still_running);
+  rc = curl_multi_socket_action(g->multi, CURL_SOCKET_TIMEOUT, 0, &g->still_running);
   mcode_or_die("timer_cb: curl_multi_socket_action", rc);
   check_multi_info(g);
 }
@@ -266,12 +265,14 @@ static void setsock(SockInfo *f, curl_socket_t s, CURL *e, int act,
 
 
 /* Initialize a new SockInfo structure */
-static void addsock(curl_socket_t s, CURL *easy, int action, GlobalInfo *g)
+static void addsock(curl_socket_t s, CURL *easy, int what, GlobalInfo *g)
 {
+  DPRINT("%s e %p s %i what %i cbp %p\n",
+         __PRETTY_FUNCTION__,easy, s, what, g);
   SockInfo *fdp = calloc(sizeof(SockInfo), 1);
 
   fdp->global = g;
-  setsock(fdp, s, easy, action, g);
+  setsock(fdp, s, easy, what, g);
   curl_multi_assign(g->multi, s, fdp);
 }
 
