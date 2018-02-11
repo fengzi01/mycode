@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #define BUFSIZE (4096)
-#define REMOTE_IP "127.0.0.1"
+#define REMOTE_IP "10.101.114.209"
 #define REMOTE_PORT 8081
 
 int main(int argc, char *argv[])

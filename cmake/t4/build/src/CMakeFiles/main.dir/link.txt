@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++   -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/main.dir/main.o  -o main  -L/tmp/usr/lib -Wl,-rpath,/tmp/usr/lib -lhello 

@@ -1,0 +1,3 @@
+/tmp/lib/libhello.dylib
+/tmp/lib/libhello.a
+/tmp/include/hello/hello.h

@@ -1,0 +1,14 @@
+/Users/fengyuwei/code/mycode/cmake/t3/build/CMakeFiles/install/local.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/CMakeFiles/install/strip.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/CMakeFiles/install.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/CMakeFiles/list_install_components.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/CMakeFiles/rebuild_cache.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/CMakeFiles/edit_cache.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/install/local.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/install/strip.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/install.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/rebuild_cache.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/edit_cache.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/hello_static.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/list_install_components.dir
+/Users/fengyuwei/code/mycode/cmake/t3/build/lib/CMakeFiles/hello.dir
