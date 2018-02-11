@@ -130,7 +130,6 @@ func serv(in net.Conn, out net.Conn) {
 		fmt.Printf("serv %d\n", n)
 		out.Write(b[:n])
 	}
-
 }
 
 type Proxy struct {
@@ -179,7 +178,7 @@ func handleConnection(conn net.Conn) {
 }
 
 func main() {
-	ln, err := net.Listen("tcp", ":1080")
+	ln, err := net.Listen("tcp", ":8888")
 	if err != nil {
 		fmt.Printf("bind error\n")
 		return

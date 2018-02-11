@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	_ "github.com/lunux2008/xulu"
+	//	_ "github.com/lunux2008/xulu"
 	"math/rand"
 	"strconv"
 	"strings"

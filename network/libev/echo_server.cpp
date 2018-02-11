@@ -12,7 +12,7 @@
 
 #define  PEER_IP_LENGTH      16
 
-const int getpeerinfo(int fd, char* ipaddr, int *port)
+static int getpeerinfo(int fd, char* ipaddr, int *port)
 {
 	struct sockaddr_in name;
 	socklen_t namelen = sizeof(name);
@@ -28,7 +28,7 @@ const int getpeerinfo(int fd, char* ipaddr, int *port)
 	strncpy(ipaddr,
 			inet_ntoa(*(struct in_addr *)&name.sin_addr.s_addr),
 			PEER_IP_LENGTH);
-	*port = name.sin_port;
+	*port = ntohs(name.sin_port);
   }
 
 static void client_read_cb(struct ev_loop *loop,ev_io *eh /*event handler*/,int revents /*event type*/) {
@@ -84,10 +84,10 @@ static void accept_cb(struct ev_loop *loop,ev_io *eh /*event handler*/,int reven
         perror("accept error");
         return;
     }
-    getpeerinfo(client_fd,ip,&port);
     printf("new connection:[%s:%d]\n",inet_ntop(AF_INET,&client_addr.sin_addr,ip,sizeof(ip)),ntohs(client_addr.sin_port));
-    printf("new connection:[%s:%d]\n",ip,port);
 
+    // getpeerinfo(client_fd,ip,&port);
+    // printf("new connection:[%s:%d]\n",ip,port);
     
     /* 初始化客户端连接event handler */
     client_eh = (struct ev_io *)malloc(sizeof(struct ev_io));

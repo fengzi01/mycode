@@ -19,6 +19,7 @@ typedef struct _easy_curl_data {
 typedef struct _multi_curl_sockinfo {
     curl_socket_t fd;
     CURL *cp;
+    struct epoll_event ev;
 } multi_curl_sockinfo;
 
 char curl_cb_data[1024] = {0};
@@ -28,32 +29,30 @@ static int sock_cb (CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
     DPRINT("%s e %p s %i what %i cbp %p sockp %p\n",
             __PRETTY_FUNCTION__, e, s, what, cbp, sockp);
 
-    struct epoll_event ev = {0};
-
     global_info * g = (global_info *) cbp;
     multi_curl_sockinfo  *fdp = (multi_curl_sockinfo *) sockp;
 
     if (what == CURL_POLL_REMOVE) {
+        epoll_ctl(g->epfd, EPOLL_CTL_DEL, s, &fdp->ev);
         if (fdp) {
             free(fdp);
         }
-        epoll_ctl(g->epfd, EPOLL_CTL_DEL, s, &ev);
     } else {
         if (what == CURL_POLL_IN) {
-            ev.events |= EPOLLIN;
+            fdp->ev.events |= EPOLLIN;
         } else if (what == CURL_POLL_OUT) {
-            ev.events |= EPOLLOUT;
+            fdp->ev.events |= EPOLLOUT;
         } else if (what == CURL_POLL_INOUT) {
-            ev.events |= EPOLLIN | EPOLLOUT;
+            fdp->ev.events |= EPOLLIN | EPOLLOUT;
         }
 
-        if (!fpd) {
-            fpd = (multi_curl_sockinfo *)malloc(sizeof(multi_curl_sockinfo));
-            fpd->fd = s;
-            fpd->cp = e;
+        if (!fdp) {
+            fdp = (multi_curl_sockinfo *)malloc(sizeof(multi_curl_sockinfo));
+            fdp->fd = s;
+            fdp->cp = e;
 
-            epoll_ctl(g->epfd, EPOLL_CTL_ADD, s, &ev);
-            curl_multi_assign(g->multi, s, &ev);
+            epoll_ctl(g->epfd, EPOLL_CTL_ADD, s, &fdp->ev);
+            curl_multi_assign(g->multi, s, &fdp);
         }
 
     }

@@ -32,4 +32,10 @@ y1 = np.array([-1,-2,-3,-4])
 y2 = np.array([1,2,3,4])
 x = np.where(cond>2,y1,y2) # 长度须匹配
 
+def test(test,test1):
+    i = 100
+    print("hello world")
+
+class Test:
+
 print(x)

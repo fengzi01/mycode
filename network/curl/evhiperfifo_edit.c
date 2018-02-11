@@ -1,65 +1,3 @@
-/***************************************************************************
- *                                  _   _ ____  _
- *  Project                     ___| | | |  _ \| |
- *                             / __| | | | |_) | |
- *                            | (__| |_| |  _ <| |___
- *                             \___|\___/|_| \_\_____|
- *
- * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/
-/* <DESC>
- * multi socket interface together with libev
- * </DESC>
- */
-/* Example application source code using the multi socket interface to
- * download many files at once.
- *
- * This example features the same basic functionality as hiperfifo.c does,
- * but this uses libev instead of libevent.
- *
- * Written by Jeff Pohlmeyer, converted to use libev by Markus Koetter
-
-Requires libev and a (POSIX?) system that has mkfifo().
-
-This is an adaptation of libcurl's "hipev.c" and libevent's "event-test.c"
-sample programs.
-
-When running, the program creates the named pipe "hiper.fifo"
-
-Whenever there is input into the fifo, the program reads the input as a list
-of URL's and creates some new easy handles to fetch each URL via the
-curl_multi "hiper" API.
-
-
-Thus, you can try a single URL:
-  % echo http://www.yahoo.com > hiper.fifo
-
-Or a whole bunch of them:
-  % cat my-url-list > hiper.fifo
-
-The fifo buffer is handled almost instantly, so you can even add more URL's
-while the previous requests are still being downloaded.
-
-Note:
-  For the sake of simplicity, URL length is limited to 1023 char's !
-
-This is purely a demo app, all retrieved data is simply discarded by the write
-callback.
-
-*/
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -72,19 +10,43 @@ callback.
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define DPRINT(x...) printf(x)
 
 #define MSG_OUT stdout /* Send info to stdout, change to stderr if you want */
 
+#define  PEER_IP_LENGTH      16
+
+static int getpeerinfo(int fd, char* ipaddr, int *port)
+{
+	struct sockaddr_in name;
+	socklen_t namelen = sizeof(name);
+	struct hostent* result;
+
+	/*
+	 * Clear the memory.
+	 */
+	memset(ipaddr, '\0', PEER_IP_LENGTH);
+	if (getpeername(fd, (struct sockaddr *)&name, &namelen) != 0) {
+		return -1;
+	} 
+	strncpy(ipaddr,
+			inet_ntoa(*(struct in_addr *)&name.sin_addr.s_addr),
+			PEER_IP_LENGTH);
+	*port = ntohs(name.sin_port);
+  }
+
+
 
 /* Global information, common to all connections */
 typedef struct _GlobalInfo
 {
-  struct ev_loop *loop;
-  struct ev_io fifo_event;
-  struct ev_timer timer_event;
-  CURLM *multi;
+  struct ev_loop *loop; // ev reactor
+  struct ev_io fifo_event; // io event handler
+  struct ev_timer timer_event; // time event handler
+  CURLM *multi; //  multi curl ptr
   int still_running;
   FILE *input;
 } GlobalInfo;
@@ -93,42 +55,26 @@ typedef struct _GlobalInfo
 /* Information associated with a specific easy handle */
 typedef struct _ConnInfo
 {
-  CURL *easy;
-  char *url;
-  GlobalInfo *global;
-  char error[CURL_ERROR_SIZE];
+  CURL *easy;  // curl ptr
+  char *url; 
+  GlobalInfo *global; // global info
+  char error[CURL_ERROR_SIZE]; // error msg
+  char buf[1024];
+  unsigned int len;
 } ConnInfo;
 
 
 /* Information associated with a specific socket */
 typedef struct _SockInfo
 {
-  curl_socket_t sockfd;
+  curl_socket_t sockfd; // fd
   CURL *easy;
-  int action;
-  long timeout;
-  struct ev_io ev;
+  int action; // 
+  long timeout; // 超时时间
+  struct ev_io ev; // event handler assoc with fd
   int evset;
-  GlobalInfo *global;
+  GlobalInfo *global; // global info
 } SockInfo;
-
-static void timer_cb(EV_P_ struct ev_timer *w, int revents);
-
-/* Update the event timer after curl_multi library calls */
-static int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g)
-{
-  printf("--------call multi_timer_cb\n");
-  DPRINT("%s %li\n", __PRETTY_FUNCTION__,  timeout_ms);
-  ev_timer_stop(g->loop, &g->timer_event);
-  if(timeout_ms > 0) {
-    double  t = timeout_ms / 1000;
-    ev_timer_init(&g->timer_event, timer_cb, t, 0.);
-    ev_timer_start(g->loop, &g->timer_event);
-  }
-  else if(timeout_ms == 0)
-    timer_cb(g->loop, &g->timer_event, 0);
-  return 0;
-}
 
 /* Die if we get a bad CURLMcode somewhere */
 static void mcode_or_die(const char *where, CURLMcode code)
@@ -167,10 +113,6 @@ static void mcode_or_die(const char *where, CURLMcode code)
     exit(code);
   }
 }
-
-
-
-/* Check for completed transfers, and remove their easy handles */
 static void check_multi_info(GlobalInfo *g)
 {
   char *eff_url;
@@ -188,6 +130,9 @@ static void check_multi_info(GlobalInfo *g)
       curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn);
       curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &eff_url);
       fprintf(MSG_OUT, "DONE: %s => (%d) %s\n", eff_url, res, conn->error);
+      // 打印出数据
+      conn->buf[conn->len] = '\0';
+      fprintf(MSG_OUT,"MSG: %s \n",conn->buf);
       curl_multi_remove_handle(g->multi, easy);
       free(conn->url);
       curl_easy_cleanup(easy);
@@ -196,7 +141,34 @@ static void check_multi_info(GlobalInfo *g)
   }
 }
 
+static void timer_cb(EV_P_ struct ev_timer *w, int revents);
 
+static void timer_cb(EV_P_ struct ev_timer *w, int revents)
+{
+  DPRINT("%s  w %p revents %i\n", __PRETTY_FUNCTION__, w, revents);
+
+  GlobalInfo *g = (GlobalInfo *)w->data;
+  CURLMcode rc;
+
+  rc = curl_multi_socket_action(g->multi, CURL_SOCKET_TIMEOUT, 0, &g->still_running);
+  mcode_or_die("timer_cb: curl_multi_socket_action", rc);
+  check_multi_info(g);
+}
+
+/* Update the event timer after curl_multi library calls */
+static int multi_timer_cb(CURLM *multi, long timeout_ms, GlobalInfo *g)
+{
+  DPRINT("%s %li\n", __PRETTY_FUNCTION__,  timeout_ms);
+  ev_timer_stop(g->loop, &g->timer_event);
+  if(timeout_ms > 0) {
+    double  t = timeout_ms / 1000;
+    ev_timer_init(&g->timer_event, timer_cb, t, 0.);
+    ev_timer_start(g->loop, &g->timer_event);
+  }
+  else if(timeout_ms == 0)
+    timer_cb(g->loop, &g->timer_event, 0);
+  return 0;
+}
 
 /* Called by libevent when we get action on a multi socket */
 static void event_cb(EV_P_ struct ev_io *w, int revents)
@@ -207,6 +179,7 @@ static void event_cb(EV_P_ struct ev_io *w, int revents)
 
   int action = (revents&EV_READ?CURL_POLL_IN:0)|
     (revents&EV_WRITE?CURL_POLL_OUT:0);
+  // 在这里触发curl函数调用
   rc = curl_multi_socket_action(g->multi, w->fd, action, &g->still_running);
   mcode_or_die("event_cb: curl_multi_socket_action", rc);
   check_multi_info(g);
@@ -217,20 +190,6 @@ static void event_cb(EV_P_ struct ev_io *w, int revents)
 }
 
 /* Called by libevent when our timeout expires */
-static void timer_cb(EV_P_ struct ev_timer *w, int revents)
-{
-  printf("--------call timer_cb--------\n");
-  DPRINT("%s  w %p revents %i\n", __PRETTY_FUNCTION__, w, revents);
-
-  GlobalInfo *g = (GlobalInfo *)w->data;
-  CURLMcode rc;
-
-  rc = curl_multi_socket_action(g->multi, CURL_SOCKET_TIMEOUT, 0,
-                                &g->still_running);
-  mcode_or_die("timer_cb: curl_multi_socket_action", rc);
-  printf("---timer_cb---: check_multi_info");
-  check_multi_info(g);
-}
 
 /* Clean up the SockInfo structure */
 static void remsock(SockInfo *f, GlobalInfo *g)
@@ -256,23 +215,34 @@ static void setsock(SockInfo *f, curl_socket_t s, CURL *e, int act,
   f->sockfd = s;
   f->action = act;
   f->easy = e;
-  if(f->evset)
+  if(f->evset) {
+      printf(">>>>stop connect info\n");
+      // 重新初始化
     ev_io_stop(g->loop, &f->ev);
+  }
+  char ip[PEER_IP_LENGTH];
+  int port = 0;
+  getpeerinfo(s,ip,&port);
+  printf(">>>> IP [%s:%d]\n",ip,port);
+  // 初始化 io event handler
   ev_io_init(&f->ev, event_cb, f->sockfd, kind);
   f->ev.data = g;
   f->evset = 1;
+  // 注册
   ev_io_start(g->loop, &f->ev);
 }
 
 
 
 /* Initialize a new SockInfo structure */
-static void addsock(curl_socket_t s, CURL *easy, int action, GlobalInfo *g)
+static void addsock(curl_socket_t s, CURL *easy, int what, GlobalInfo *g)
 {
+  DPRINT("%s e %p s %i what %i cbp %p\n",
+         __PRETTY_FUNCTION__,easy, s, what, g);
   SockInfo *fdp = calloc(sizeof(SockInfo), 1);
 
   fdp->global = g;
-  setsock(fdp, s, easy, action, g);
+  setsock(fdp, s, easy, what, g);
   curl_multi_assign(g->multi, s, fdp);
 }
 
@@ -293,6 +263,7 @@ static int sock_cb(CURL *e, curl_socket_t s, int what, void *cbp, void *sockp)
     remsock(fdp, g);
   }
   else {
+    // 如果fdp为空
     if(!fdp) {
       fprintf(MSG_OUT, "Adding data: %s\n", whatstr[what]);
       addsock(s, e, what, g);
@@ -313,8 +284,8 @@ static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data)
 {
   size_t realsize = size * nmemb;
   ConnInfo *conn = (ConnInfo*) data;
-  (void)ptr;
-  (void)conn;
+  memcpy(conn->buf,ptr,realsize);
+  conn->len += realsize;
   return realsize;
 }
 
@@ -342,6 +313,8 @@ static void new_conn(char *url, GlobalInfo *g)
   memset(conn, 0, sizeof(ConnInfo));
   conn->error[0]='\0';
 
+  conn->len = 0;
+
   conn->easy = curl_easy_init();
   if(!conn->easy) {
     fprintf(MSG_OUT, "curl_easy_init() failed, exiting!\n");
@@ -352,14 +325,19 @@ static void new_conn(char *url, GlobalInfo *g)
   curl_easy_setopt(conn->easy, CURLOPT_URL, conn->url);
   curl_easy_setopt(conn->easy, CURLOPT_WRITEFUNCTION, write_cb);
   curl_easy_setopt(conn->easy, CURLOPT_WRITEDATA, conn);
-  //curl_easy_setopt(conn->easy, CURLOPT_VERBOSE, 1L);
+  // curl_easy_setopt(conn->easy, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(conn->easy, CURLOPT_ERRORBUFFER, conn->error);
   curl_easy_setopt(conn->easy, CURLOPT_PRIVATE, conn);
-  //curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
-  //curl_easy_setopt(conn->easy, CURLOPT_PROGRESSFUNCTION, prog_cb);
-  //curl_easy_setopt(conn->easy, CURLOPT_PROGRESSDATA, conn);
+  /*curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);           */
+  /*curl_easy_setopt(conn->easy, CURLOPT_PROGRESSFUNCTION, prog_cb);*/
+  /*curl_easy_setopt(conn->easy, CURLOPT_PROGRESSDATA, conn);       */
   curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 3L);
   curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
+
+  long int ctimeout = 100;
+  long int rwtimeout = 200;
+  curl_easy_setopt(conn->easy, CURLOPT_CONNECTTIMEOUT_MS, ctimeout);
+  curl_easy_setopt(conn->easy, CURLOPT_TIMEOUT_MS,  rwtimeout);
 
   fprintf(MSG_OUT,
           "Adding easy %p to multi %p (%s)\n", conn->easy, g->multi, url);
@@ -418,6 +396,8 @@ static int init_fifo(GlobalInfo *g)
   g->input = fdopen(sockfd, "r");
 
   fprintf(MSG_OUT, "Now, pipe some URL's into > %s\n", fifo);
+
+  // loop 监听fifo文件的可读事件
   ev_io_init(&g->fifo_event, fifo_cb, sockfd, EV_READ);
   ev_io_start(g->loop, &g->fifo_event);
   return (0);
@@ -431,7 +411,7 @@ int main(int argc, char **argv)
   (void)argv;
 
   memset(&g, 0, sizeof(GlobalInfo));
-  g.loop = ev_default_loop(0);
+  g.loop = ev_default_loop(0); // init ev reactor
 
   init_fifo(&g);
   g.multi = curl_multi_init();
@@ -439,6 +419,7 @@ int main(int argc, char **argv)
   ev_timer_init(&g.timer_event, timer_cb, 0., 0.);
   g.timer_event.data = &g;
   g.fifo_event.data = &g;
+
   curl_multi_setopt(g.multi, CURLMOPT_SOCKETFUNCTION, sock_cb);
   curl_multi_setopt(g.multi, CURLMOPT_SOCKETDATA, &g);
   curl_multi_setopt(g.multi, CURLMOPT_TIMERFUNCTION, multi_timer_cb);

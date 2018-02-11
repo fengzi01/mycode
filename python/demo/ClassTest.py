@@ -1,4 +1,5 @@
-#!/user/bin/env python3
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import sys
 
