@@ -1,17 +1,7 @@
-ThreadPool
-==========
+# 自己实现的线程池
+参考网上已有的线程池方案
+添加新特性:
+ - 支持task最大限制
+ - 使用c++11标准
+ - 自己封装Thread
 
-A simple C++11 Thread Pool implementation.
-
-Basic usage:
-```c++
-// create thread pool with 4 worker threads
-ThreadPool pool(4);
-
-// enqueue and store future
-auto result = pool.enqueue([](int answer) { return answer; }, 42);
-
-// get result from future
-std::cout << result.get() << std::endl;
-
-```
