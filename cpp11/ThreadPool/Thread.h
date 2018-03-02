@@ -1,5 +1,5 @@
-#ifndef _THREAD_H
-#define _THREAD_H 
+#ifndef _STD1_THREAD_H
+#define _STD1_THREAD_H 
 #include <functional>
 #include <pthread.h>
 #include <unistd.h>  // pid_t

@@ -7,14 +7,14 @@ static void MySleep(int seconds) {
 int main(int argc, char *argv[])
 {
     std1::ThreadPool pool(2);
-    pool.enqueue(
+    pool.addTask(
         []{
             for(int i=0;i<10;++i) {
                 fprintf(stderr,"task 1\n");
                 MySleep(1);   
             }
         });
-    pool.enqueue(
+    pool.addTask(
         []{
             for(;;) {
                 fprintf(stderr,"task 2\n");

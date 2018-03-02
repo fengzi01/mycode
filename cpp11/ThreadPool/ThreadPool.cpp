@@ -4,17 +4,15 @@ namespace std1 {
 void ThreadPool::threadFunc() {
     for(;;) {
         Task task;
-        fprintf(stderr,"start thread\n");
         {
-            std::unique_lock<std::mutex> lock(this->_mutex);
-            fprintf(stderr,"run thread\n");
-            this->_readyCondition.wait(lock,[this]{return this->_stop || !this->_tasks.empty();});
-            if (this->_stop && this->_tasks.empty()) {
+            std::unique_lock<std::mutex> lock(_mutex);
+            _readyCondition.wait(lock,[this]{return this->_stop || !this->_tasks.empty();});
+            if (_stop && _tasks.empty()) {
                 return;
             }
             // 如果tasks任务没执行完成，需要继续执行
-            task = std::move(this->_tasks.front());
-            this->_tasks.pop();
+            task = std::move(_tasks.front());
+            _tasks.pop();
 
             if (_maxTaskSize > 0) {
                 // notify enqueue thread
@@ -45,9 +43,9 @@ ThreadPool::~ThreadPool() {
     }
 }
 
-void ThreadPool::enqueue(Task &&task) {
+void ThreadPool::addTask(Task &&task) {
     std::unique_lock<std::mutex> lock(this->_mutex);
-    fprintf(stderr,"add task\n");
+    //fprintf(stderr,"add task\n");
     if (_maxTaskSize > 0 && _tasks.size() >= _maxTaskSize) {
         this->_fullCondition.wait(lock,
              [this] {
@@ -60,8 +58,9 @@ void ThreadPool::enqueue(Task &&task) {
         return;
     }
 
-    this->_tasks.push(std::move(task));
-    fprintf(stderr,"add task end\n");
+    _tasks.push(std::move(task));
+    _readyCondition.notify_one();
+    //fprintf(stderr,"add task end\n");
 }
 
 } // std1

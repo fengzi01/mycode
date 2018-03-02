@@ -17,7 +17,11 @@ class ThreadPool {
         ThreadPool(const ThreadPool &) = delete;
         ThreadPool& operator=(const ThreadPool&) = delete;
 
-        void enqueue(Task &&task);
+        void addTask(Task &&task);
+        size_t getTaskSize() {
+            std::lock_guard<std::mutex> guard(_mutex);
+            return _tasks.size();
+        }
     private:
         void threadFunc();
         std::mutex _mutex;
