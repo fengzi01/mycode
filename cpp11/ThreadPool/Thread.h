@@ -47,10 +47,9 @@ class Thread {
                _callable();
            }
        };
-       typedef std::unique_ptr<State> StatePtr;
 
     private:
-       void startThread(StatePtr state);
+       void startThread(std::unique_ptr<State> state);
        pthread_t _ptid;
        bool _joined;
        pid_t _pid;
