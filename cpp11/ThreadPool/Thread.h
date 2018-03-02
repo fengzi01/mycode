@@ -7,7 +7,6 @@
 #include <utility> // std::forword
 
 namespace std1 {
-
 /**
  * pthread简单封装
  * 参照 c++11 std::thread
@@ -15,10 +14,8 @@ namespace std1 {
 class Thread {
     public:
        typedef std::function<void ()> ThreadFunc;
-       explicit Thread(ThreadFunc &&callable):_joined(false) {
-           // 启动线程
-           startThread(StatePtr(new State(std::forward<ThreadFunc>(callable))));
-       }
+
+       explicit Thread(ThreadFunc &&callable);
 
        ~Thread() {
            if (joinable()) {

@@ -10,6 +10,12 @@ extern "C" {
         return nullptr;
     }
 }
+
+Thread::Thread(ThreadFunc &&callable):_joined(false) {
+    // 启动线程
+    startThread(StatePtr(new State(std::forward<ThreadFunc>(callable))));
+}
+
 void Thread::startThread(StatePtr state) {
     const int err = pthread_create(&_ptid,NULL,&native_thread_routine,state.get());
     if (err) {
