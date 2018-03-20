@@ -51,7 +51,7 @@ static void left_rotate(rbtree_t *tree,rbtree_node_t *x) {
 
     // 2. 连接与P节点的双向连接
     y->parent = x->parent;
-    if (y->parent != tree->nil) {
+    if (y->parent == tree->nil) {
         tree->root = y;
     } else {
         if (x == y->parent->left) {
@@ -65,6 +65,7 @@ static void left_rotate(rbtree_t *tree,rbtree_node_t *x) {
     x->parent = y;
     y->left = x;
 }
+
 /**
  *                    .-.          
  *                   (18 )         
@@ -101,74 +102,72 @@ static void left_rotate(rbtree_t *tree,rbtree_node_t *x) {
  *         `-'              `-'    
  */
 static void right_rotate(rbtree_t *tree,rbtree_node_t *x) {
-   if (x->left == tree->nil) return; 
-   rbtree_node_t *y = x->left;
+    if (x->left == tree->nil) return; 
+    rbtree_node_t *y = x->left;
 
-   x->left = y->right;
-   if (x->left != tree->nil) {
-       x->left->parent = x;
-   }
+    x->left = y->right;
+    if (x->left != tree->nil) {
+        x->left->parent = x;
+    }
 
-   y->parent = x->parent;
-   if (y->parent == tree->nil) {
-       tree->root = y;
-   } else {
-       if (y->parent->left == x) {
-           y = y->parent->left;
-       } else {
-           y = y->parent->right;
-       }
-   }
+    y->parent = x->parent;
+    if (y->parent == tree->nil) {
+        tree->root = y;
+    } else {
+        if (y->parent->left == x) {
+            y = y->parent->left;
+        } else {
+            y = y->parent->right;
+        }
+    }
 
-   x->parent = y;
-   y->right = x;
+    x->parent = y;
+    y->right = x;
 }
 
-static void rbtree_insert_fixup(rbtree_t *tree,rbtree_node_t *n) {
-   while (n->parent->col != rbtree_col_red) {
-       if (n->parent == G_PARENT(n)->left) {
-           // 父亲节点是祖父节点的左子树
-           rbtree_node_t *uncle = UNCLE_R(n);
-           if (uncle->col == rbtree_col_red) {
-                n->parent->col = rbtree_col_black;
-                uncle->col = rbtree_col_black;
-                G_PARENT(n)->col = rbtree_col_red;
+static void rbtree_insert_fixup(rbtree_t *tree,rbtree_node_t *node) {
+    rbtree_node_t *n = node;
+    while (n != tree->root && n->parent->col == RBTREE_COL_RED) {
+        if (n->parent == G_PARENT(n)->left) {
+            // 父亲节点是祖父节点的左子树
+            rbtree_node_t *uncle = UNCLE_R(n);
+            if (uncle->col == RBTREE_COL_RED) {
+                n->parent->col = RBTREE_COL_BLACK;
+                uncle->col = RBTREE_COL_BLACK;
+                G_PARENT(n)->col = RBTREE_COL_RED;
                 n = G_PARENT(n);
-           } else {
-               if(n == n->parent->right) {
-                   n = n->parent;
-                   left_rotate(tree,n);
-               }
-               n->parent->col = rbtree_col_black;
-               G_PARENT(n)->col = rbtree_col_red;
-               right_rotate(tree,G_PARENT(n));
-           }
-       } else if (n->parent == G_PARENT(n)->right) {
-           // 对称
-           rbtree_node_t *uncle = UNCLE_L(n);
-           if (uncle->col == rbtree_col_red) {
-                n->parent->col = rbtree_col_black;
-                uncle->col = rbtree_col_black;
-                G_PARENT(n)->col = rbtree_col_red;
+            } else {
+                if(n == n->parent->right) {
+                    n = n->parent;
+                    left_rotate(tree,n);
+                }
+                n->parent->col = RBTREE_COL_BLACK;
+                G_PARENT(n)->col = RBTREE_COL_RED;
+                right_rotate(tree,G_PARENT(n));
+            }
+        } else {
+            // 对称
+            rbtree_node_t *uncle = UNCLE_L(n);
+            if (uncle->col == RBTREE_COL_RED) {
+                n->parent->col = RBTREE_COL_BLACK;
+                uncle->col = RBTREE_COL_BLACK;
+                G_PARENT(n)->col = RBTREE_COL_RED;
                 n = G_PARENT(n);
-           } else {
-               if(n == n->parent->left) {
-                   n = n->parent;
-                   right_rotate(tree,n);
-               }
-               n->parent->col = rbtree_col_black;
-               G_PARENT(n)->col = rbtree_col_red;
-               left_rotate(tree,G_PARENT(n));
-           }
-       } else {
-           printf("insert root\n");
-           break;
-       }
-   }
-   tree->root->col = rbtree_col_black;
+            } else {
+                if(n == n->parent->left) {
+                    n = n->parent;
+                    right_rotate(tree,n);
+                }
+                n->parent->col = RBTREE_COL_BLACK;
+                G_PARENT(n)->col = RBTREE_COL_RED;
+                left_rotate(tree,G_PARENT(n));
+            }
+        }
+    }
+    tree->root->col = RBTREE_COL_BLACK;
 }
 
-void rbtree_insert_node(rbtree_t *tree,rbtree_node_t *n) {
+static void _rbtree_insert_node(rbtree_t *tree,rbtree_node_t *n) {
     rbtree_node_t *x = tree->root;
     rbtree_node_t *p = x;
 
@@ -186,20 +185,27 @@ void rbtree_insert_node(rbtree_t *tree,rbtree_node_t *n) {
     n->parent = p;
     if (p == tree->nil) {
         // empty
-        n = tree->root;
+        tree->root = n;
         printf("insert node is root\n");
-//        return;
+        //        return;
     } else {
         if (n->key < p->key) {
-            n = p->left;
+            p->left = n;
         } else {
-            n = p->right;
+            p->right = n;
         }
     }
-
     n->left = n->right = tree->nil;
-    n->col = rbtree_col_red;
+    n->col = RBTREE_COL_RED;
     rbtree_insert_fixup(tree,n);
+}
+
+void rbtree_insert_node(rbtree_t *t,int key,void *data) {
+    rbtree_node_t *n = (rbtree_node_t *)malloc(sizeof(rbtree_node_t));
+    n->key = key;
+    n->val = data;
+
+    _rbtree_insert_node(t,n);
 }
 
 rbtree_t* rbtree_create(void *p) {
@@ -210,12 +216,41 @@ rbtree_t* rbtree_create(void *p) {
 
     tree->nil = (rbtree_node_t *)malloc(sizeof(rbtree_node_t));
     tree->nil->left = tree->nil->right = tree->nil->parent = NULL;
-    tree->nil->col = rbtree_col_black;
-    
+    tree->nil->col = RBTREE_COL_BLACK;
+
     tree->root = tree->nil;
     return tree;
-}
-
+} 
 void rbtree_destroy(rbtree_t *t) {
 }
 
+rbtree_node_t * rbtree_min_node(rbtree_t *t) {
+    rbtree_node_t *min = t->root;
+    rbtree_node_t *x = t->root;
+    int i = 0;
+    while (x != t->nil) {
+        min = x;
+        x = x->left;
+        ++i;
+        printf("x = %d\n",x->key);
+    }
+    printf("len = %d\n",i);
+    printf("min = %d\n",min->key);
+    return min;
+}
+
+rbtree_node_t *rbtree_max_node(rbtree_t *t) {
+    rbtree_node_t *max = t->root;
+    rbtree_node_t *x = t->root;
+    int i = 0;
+    while (x != t->nil) {
+        max = x;
+        x = x->right;
+        ++i;
+        printf("x = %d\n",x->key);
+    }
+    printf("len = %d\n",i);
+    printf("max = %d\n",max->key);
+
+    return max;
+}

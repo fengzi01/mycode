@@ -26,20 +26,21 @@ struct _rbtree_t {
 #define UNCLE_L(n) (n)->parent->parent->left
 #define G_PARENT(n) (n)->parent->parent
 
-#define rbtree_col_red 1
-#define rbtree_col_black 2
+#define RBTREE_COL_RED 1
+#define RBTREE_COL_BLACK 2
 
-#define IS_RED(n) ((n)->col==rbtree_col_red)
-#define IS_BLACK(n) ((n)->col==rbtree_col_black)
+#define IS_RED(n) ((n)->col==RBTREE_COL_RED)
+#define IS_BLACK(n) ((n)->col==RBTREE_COL_BLACK)
 
-#define SET_RED(n) ((n)->col=rbtree_col_red)
-#define SET_BLACK(n) ((n)->col=rbtree_col_black)
+#define SET_RED(n) ((n)->col=RBTREE_COL_RED)
+#define SET_BLACK(n) ((n)->col=RBTREE_COL_BLACK)
 
 #define INIT_RBTREE_NODE(nil,n, key, val) do {  \
     (n)->right = (nil);                      \
     (n)->left = (nil);                       \
     (n)->parent = (nil);                     \
-    (n)->col = rbtree_col_red;              \
+    (n)->col = RBTREE_COL_RED;               \
+    (n)->key = (key);                        \
 } while (0)
 
 #define root(t) (t)->root
@@ -47,12 +48,16 @@ struct _rbtree_t {
 rbtree_t *rbtree_create(void *);
 void rbtree_destroy(rbtree_t *tree);
 
-void rbtree_insert_node(rbtree_t *tree,rbtree_node_t *n);
+//static void _rbtree_insert_node(rbtree_t *tree,rbtree_node_t *n);
+//static void left_rotate(rbtree_t *tree,rbtree_node_t *x);
+//static void right_rotate(rbtree_t *tree,rbtree_node_t *x); 
+
+void rbtree_insert_node(rbtree_t *tree,int key,void *data);
 void rbtree_del_node(rbtree_t *tree,rbtree_node_t *n);
 //void rbtree_del_node(rbtree_t *tree);
 
-void rbtree_min_node(rbtree_t *tree,rbtree_node_t *n);
-void rbtree_max_node(rbtree_t *tree,rbtree_node_t *n);
+rbtree_node_t *rbtree_min_node(rbtree_t *tree);
+rbtree_node_t *rbtree_max_node(rbtree_t *tree);
 
 #ifdef __cplusplus
 }
