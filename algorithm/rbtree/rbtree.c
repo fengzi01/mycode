@@ -346,6 +346,7 @@ void rbtree_del_node(rbtree_t *t,rbtree_node_t *z) {
         }
         // 用y代替z删除
         z->val = y->val;
+        z->key = y->key;
     } else {
         y = z;
     }
