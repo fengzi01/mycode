@@ -59,6 +59,8 @@ void rbtree_del_node(rbtree_t *tree,rbtree_node_t *n);
 rbtree_node_t *rbtree_min_node(rbtree_t *tree);
 rbtree_node_t *rbtree_max_node(rbtree_t *tree);
 
+rbtree_node_t *rbtree_successor_node(rbtree_t *tree,rbtree_node_t *n);
+
 #ifdef __cplusplus
 }
 #endif  

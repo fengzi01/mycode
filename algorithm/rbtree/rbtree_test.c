@@ -20,7 +20,7 @@ void TEST_rbtree_travel(rbtree_t *tree) {
 int main() {
     rbtree_t *t = rbtree_create(NULL);
     int i = 1;
-    for (i=1;i<1000000;++i) {
+    for (i=1;i<1000;++i) {
         rbtree_insert_node(t,i,NULL);
     }
 
@@ -30,6 +30,10 @@ int main() {
     printf("max = %d\n",n->key);
     n = rbtree_min_node(t);
     printf("min = %d\n",n->key);
+    n = rbtree_successor_node(t,n);
+    printf("successor = %d\n",n->key);
+    n = rbtree_successor_node(t,n);
+    printf("successor = %d\n",n->key);
 
     rbtree_destroy(t);
 }
