@@ -221,6 +221,7 @@ rbtree_t* rbtree_create(void *p) {
     tree->root = tree->nil;
     return tree;
 } 
+
 void rbtree_destroy(rbtree_t *t) {
 }
 
@@ -253,23 +254,126 @@ rbtree_node_t *rbtree_max_node(rbtree_t *t) {
 
 rbtree_node_t *rbtree_successor_node(rbtree_t *t,rbtree_node_t *n) {
     if (n == t->nil) return NULL;
+    rbtree_node_t *x = NULL;
+    rbtree_node_t *p = NULL; 
 
     if (n->right != t->nil) {
         // 右子树的最小值
-        rbtree_node_t *x = n->right;
+        x = n->right;
+        p = x; 
         while ( x != t->nil) {
+            p = x;
             x = x->left;
         }
-        return x;
+        return p;
     } else {
-        printf("n -> %d\n",n->key);
         // 第一个非右子树的父节点
-        rbtree_node_t *p = n->parent; 
-        rbtree_node_t *x = n;
-        while (p != t->nil && p->right == x) {
+        p = n->parent; 
+        x = n;
+        while (p != t->root && p->right == x) {
             x = p;
             p = p->parent;
         }
         return p;
+    }
+}
+
+static void rbtree_del_fixup(rbtree_t *t,rbtree_node_t *x) {
+    while (x != t->root && x->col == RBTREE_COL_BLACK) {
+        rbtree_node_t *w = NULL;
+        if (x == x->parent->left) {
+            w = x->parent->right;
+            if (w->col == RBTREE_COL_RED) { // case1
+                w->col = RBTREE_COL_BLACK;
+                x->parent->col = RBTREE_COL_RED;
+                left_rotate(t,x->parent);
+                w = x->parent->right; // w 必然为黑色
+            }
+            // FIXME 有空节点咋办
+            if (w->left->col == RBTREE_COL_BLACK && w->right->col == RBTREE_COL_BLACK) { // case2
+                w->col = RBTREE_COL_RED;
+                x = x->parent;
+            } else {
+                if (w->right->col == RBTREE_COL_BLACK) { // case3
+                    w->left->col = RBTREE_COL_BLACK;
+                    w->col = RBTREE_COL_RED;
+                    right_rotate(t,w);
+                    w = x->parent->right;
+                }
+                w->col = x->parent->col; // case4
+                x->parent->col = RBTREE_COL_BLACK;
+                w->right->col = RBTREE_COL_BLACK;
+                left_rotate(t,x->parent);
+                x = t->root;  // why?
+            }
+        } else {
+            w = x->parent->left;
+            if (w->col == RBTREE_COL_RED) { // case1
+                w->col = RBTREE_COL_BLACK;
+                x->parent->col = RBTREE_COL_RED;
+                right_rotate(t,x->parent);
+                w = x->parent->left; // w 必然为黑色
+            }
+            // FIXME 有空节点咋办
+            if (w->left->col == RBTREE_COL_BLACK && w->right->col == RBTREE_COL_BLACK) { // case2
+                w->col = RBTREE_COL_RED;
+                x = x->parent;
+            } else {
+                if (w->left->col == RBTREE_COL_BLACK) { // case3
+                    w->right->col = RBTREE_COL_BLACK;
+                    w->col = RBTREE_COL_RED;
+                    left_rotate(t,w);
+                    w = x->parent->left;
+                }
+                w->col = x->parent->col; // case4
+                x->parent->col = RBTREE_COL_BLACK;
+                w->right->col = RBTREE_COL_BLACK;
+                right_rotate(t,x->parent);
+                x = t->root;  // why?
+            }
+        }
+    }
+    x->col = RBTREE_COL_BLACK;
+}
+
+void rbtree_del_node(rbtree_t *t,rbtree_node_t *z) {
+    rbtree_node_t *y = NULL, *x = NULL;
+    if (z->left != t->nil && z->right != t->nil) {
+        // 找到后继节点
+        y = z->right;
+        while ( y->left != t->nil) {
+            y = y->left;
+        }
+        // 用y代替z删除
+        z->val = y->val;
+    } else {
+        y = z;
+    }
+
+    // y 才是要删除的节点！！！
+    if (y->left == t->nil) {
+        x = y->left;
+    } else {
+        // FIXME x可能为nil
+        x = y->right;
+    }
+    // 用x来代替y
+    // FIXME x = nil时？
+    x->parent = y->parent;
+    if (y->parent == t->nil) {
+        t->root = x;
+    } else if (y == y->parent->left) {
+        y->parent->left = x;
+    } else {
+        y->parent->right = x;
+    }
+
+    /*
+    if (y != z) {
+        z->val = y->val;
+    }
+    */
+    if (y->col == RBTREE_COL_BLACK) {
+        rbtree_del_fixup(t,x);
     }
 }
