@@ -3,42 +3,21 @@
 #include <assert.h>
 #include <stdio.h>
 
-/**
- *  left_rotate
- *            .-.                 
- *            (11 )                
- *            /`-'\                
- *      /----/     \---\           
- *  .-.v                v.-.       
- * ( 9 )                (18 )      
- *  `-'                  /-'       
- *                   /--/          
- *                 .v.             
- *               /(14 \            
- *           /--/  `-' \---\       
- *         .v.              v-.    
- *        (12 )            (17 )   
- *         `-'              `-'    
- *                                 
- *            |    |               
- *            |    |               
- *            v    v               
- *                    .-.          
- *                   (18 )         
- *                   /`-'          
- *                /-/              
- *            .-.v                 
- *           (11 )                 
- *           /`-'\                 
- *     /----/     \--\             
- * .-.v               v-.          
- *( 9 )             /(14 \         
- * `-'          /--/  `-' \---\    
- *            .v.              v-. 
- *           (12 )            (17 )
- *            `-'              `-' 
- **/
-
+                                                                                 
+/*            .-. X                                                                */
+/*           (11 )                                                   .-.           */
+/*           /`-'\                                                 /(18 )\         */
+/*     /----/     \---\                                   X    /--/  `-'  \----\   */
+/* .-.v                v.-.                                .-.v                .v. */
+/*( 9 )                (18 )                              (11 )               (17 )*/
+/* `-'                / `-'\                              /`-'\                `-' */
+/*                /--/      \----\                  /----/     \--\                */
+/*              .v.              .v.  ----->    .-.v               v-.             */
+/*            /(14 \            (17 )          ( 9 )             /(14 \            */
+/*        /--/  `-' \---\        `-'            `-'          /--/  `-' \---\       */
+/*      .v.             .v.                                .v.              v-.    */
+/*     (12 )           (17 )                              (12 )            (17 )   */
+/*      `-'             `-'                                `-'              `-'    */
 static void left_rotate(rbtree_t *tree,rbtree_node_t *x) {
     if (x->right == tree->nil)  return;
     rbtree_node_t *y = x->right;
@@ -66,41 +45,21 @@ static void left_rotate(rbtree_t *tree,rbtree_node_t *x) {
     y->left = x;
 }
 
-/**
- *                    .-.          
- *                   (18 )         
- *                   /`-'          
- *                /-/              
- *            .-.v                 
- *           (11 )                 
- *           /`-'\                 
- *     /----/     \--\             
- * .-.v               v-.          
- *( 9 )             /(14 \         
- * `-'          /--/  `-' \---\    
- *            .v.              v-. 
- *           (12 )            (17 )
- *            `-'              `-' 
- *            
- *            |    |               
- *            |    |               
- *            v    v               
- *
- *            .-.                 
- *            (11 )                
- *            /`-'\                
- *      /----/     \---\           
- *  .-.v                v.-.       
- * ( 9 )                (18 )      
- *  `-'                  /-'       
- *                   /--/          
- *                 .v.             
- *               /(14 \            
- *           /--/  `-' \---\       
- *         .v.              v-.    
- *        (12 )            (17 )   
- *         `-'              `-'    
- */
+                                                                                      
+/*                      X                                        .-.                    */
+/*                      .-.                                     (11 )                   */
+/*                    /(18 )\                                   /`-'\                   */
+/*                /--/  `-'  \----\                       /----/     \---\    X         */
+/*            .-.v                .v.                 .-.v                v.-.          */
+/*           (11 )               (17 )               ( 9 )                (18 )         */
+/*           /`-'\                `-'    -------->    `-'                / `-'\         */
+/*     /----/     \--\                                               /--/      \----\   */
+/* .-.v               v-.                                          .v.              .v. */
+/*( 9 )             /(14 \                                       /(14 \            (17 )*/
+/* `-'          /--/  `-' \---\                              /--/  `-' \---\        `-' */
+/*            .v.              v-.                         .v.             .v.          */
+/*           (12 )            (17 )                       (12 )           (17 )         */
+/*            `-'              `-'                         `-'             `-'          */
 static void right_rotate(rbtree_t *tree,rbtree_node_t *x) {
     if (x->left == tree->nil) return; 
     rbtree_node_t *y = x->left;
@@ -200,7 +159,7 @@ static void _rbtree_insert_node(rbtree_t *tree,rbtree_node_t *n) {
     rbtree_insert_fixup(tree,n);
 }
 
-void rbtree_insert_node(rbtree_t *t,int key,void *data) {
+void rbtree_insert(rbtree_t *t,long long key,void *data) {
     rbtree_node_t *n = (rbtree_node_t *)malloc(sizeof(rbtree_node_t));
     n->key = key;
     n->val = data;
@@ -225,7 +184,7 @@ rbtree_t* rbtree_create(void *p) {
 void rbtree_destroy(rbtree_t *t) {
 }
 
-rbtree_node_t * rbtree_min_node(rbtree_t *t) {
+rbtree_node_t * rbtree_min(rbtree_t *t) {
     rbtree_node_t *min = t->root;
     rbtree_node_t *x = t->root;
     int i = 0;
@@ -234,11 +193,10 @@ rbtree_node_t * rbtree_min_node(rbtree_t *t) {
         x = x->left;
         ++i;
     }
-    printf("len = %d\n",i);
     return min;
 }
 
-rbtree_node_t *rbtree_max_node(rbtree_t *t) {
+rbtree_node_t *rbtree_max(rbtree_t *t) {
     rbtree_node_t *max = t->root;
     rbtree_node_t *x = t->root;
     int i = 0;
@@ -247,12 +205,10 @@ rbtree_node_t *rbtree_max_node(rbtree_t *t) {
         x = x->right;
         ++i;
     }
-    printf("len = %d\n",i);
-
     return max;
 }
 
-rbtree_node_t *rbtree_successor_node(rbtree_t *t,rbtree_node_t *n) {
+rbtree_node_t *rbtree_successor(rbtree_t *t,rbtree_node_t *n) {
     if (n == t->nil) return NULL;
     rbtree_node_t *x = NULL;
     rbtree_node_t *p = NULL; 
@@ -336,7 +292,7 @@ static void rbtree_del_fixup(rbtree_t *t,rbtree_node_t *x) {
     x->col = RBTREE_COL_BLACK;
 }
 
-void rbtree_del_node(rbtree_t *t,rbtree_node_t *z) {
+void rbtree_delete(rbtree_t *t,rbtree_node_t *z) {
     rbtree_node_t *y = NULL, *x = NULL;
     if (z->left != t->nil && z->right != t->nil) {
         // 找到后继节点
@@ -352,7 +308,7 @@ void rbtree_del_node(rbtree_t *t,rbtree_node_t *z) {
     }
 
     // y 才是要删除的节点！！！
-    if (y->left == t->nil) {
+    if (y->left != t->nil) {
         x = y->left;
     } else {
         // FIXME x可能为nil
