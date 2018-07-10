@@ -12,8 +12,11 @@
 CFLAGS = -std=gnu99 
 CC = gcc
 
+CXX = g++
+CXXFLAGS = 
+
 all:
 	$(CC) $(CFLAGS)  coroutine.c  -g -c
-	$(CC) $(CFLAGS)  main.c -g -o test coroutine.o
+	$(CXX) $(CXXFLAGS)  main.cc -g -o test coroutine.o
 clean:
 	rm -f coroutine.o test 
