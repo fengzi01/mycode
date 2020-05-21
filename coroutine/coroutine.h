@@ -5,7 +5,12 @@
 extern "C" {
 #endif
 
-#include <ucontext.h>
+#if __APPLE__ && __MACH__
+	#include <sys/ucontext.h>
+#else 
+	#include <ucontext.h>
+#endif
+
 #include <stdint.h>
 
 #define CO_STACK_SIZE (128*1024)

@@ -18,5 +18,6 @@ CXXFLAGS =
 all:
 	$(CC) $(CFLAGS)  coroutine.c  -g -c
 	$(CXX) $(CXXFLAGS)  main.cc -g -o test coroutine.o
+	$(CXX) $(CXXFLAGS)  main1.cc -g -o test1 coroutine.o
 clean:
-	rm -f coroutine.o test 
+	rm -f coroutine.o test test1
